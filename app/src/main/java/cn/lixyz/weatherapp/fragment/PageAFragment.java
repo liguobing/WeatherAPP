@@ -1,18 +1,13 @@
 package cn.lixyz.weatherapp.fragment;
 
 import android.animation.ObjectAnimator;
-import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.AdapterView;
 import android.widget.GridView;

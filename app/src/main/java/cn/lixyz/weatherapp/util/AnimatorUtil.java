@@ -1,6 +1,5 @@
 package cn.lixyz.weatherapp.util;
 
-import android.animation.ObjectAnimator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.LayoutAnimationController;

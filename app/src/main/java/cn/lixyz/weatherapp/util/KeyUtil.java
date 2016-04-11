@@ -5,7 +5,7 @@ package cn.lixyz.weatherapp.util;
  */
 public class KeyUtil {
     //和风天气KEY
-    public static final String WEATHER_KEY = "此处填写和风天气KEY";
+    public static final String WEATHER_KEY = "5d520eb089e646acb270522641a7e387";
     //百度定位使用的KEY
     public static final String BAIDU_LOCATION_KEY = "";
 }
