@@ -22,29 +22,44 @@
         android:layout_gravity="center"
         android:textSize="15dp" />
 
-    <!-- 天气图标 -->
-    <ImageView
-        android:id="@+id/img"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_weight="1" />
-    <!-- 天气和温度 -->
-    <TextView
-        android:id="@+id/weahter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
+    <!-- 天气信息layout -->
+    <LinearLayout
+        android:id="@+id/weather_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:textSize="30dp" />
+        android:orientation="vertical">
+        <!-- 天气图标 -->
+        <ImageView
+            android:id="@+id/img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1" />
+        <!-- 天气和温度 -->
+        <TextView
+            android:id="@+id/weahter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:textSize="30dp" />
 
-    <!-- 风力和风向 -->
+        <!-- 风力和风向 -->
+        <TextView
+            android:id="@+id/wind"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1" />
+    </LinearLayout>
+
     <TextView
-        android:id="@+id/wind"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_weight="1" />
+        android:id="@+id/item_message"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:visibility="gone" />
 
     <!-- 用来存放导航GridView -->
     <LinearLayout

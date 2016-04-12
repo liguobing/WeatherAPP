@@ -52,6 +52,7 @@ public class WelcomeActivity extends Activity {
             public void onClick(View v) {
                 Intent intent = new Intent(WelcomeActivity.this, MainActivity.class);
                 startActivity(intent);
+                getSharedPreferences("config", MODE_PRIVATE).edit().putBoolean("firstIn", false).commit();
                 finish();
             }
         });

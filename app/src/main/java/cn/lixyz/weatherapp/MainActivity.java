@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import cn.lixyz.weatherapp.activity.SelectCityActivity;
+import cn.lixyz.weatherapp.activity.WelcomeActivity;
 import cn.lixyz.weatherapp.bean.HeWeather;
 import cn.lixyz.weatherapp.fragment.PageAFragment;
 import cn.lixyz.weatherapp.fragment.PageBFragment;
@@ -49,24 +50,29 @@ public class MainActivity extends Activity {
     private SharedPreferences weatherSP;
     private SharedPreferences.Editor weatherEditor;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         SetBarColorUtil.setBarColor(getWindow());   //调用工具类，设置StatusBar和NavigationBar透明
+        sp = getSharedPreferences("config", MODE_PRIVATE);
+        editor = sp.edit();
+        weatherSP = getSharedPreferences("weatherInfo", MODE_PRIVATE);
+        weatherEditor = weatherSP.edit();
+
+        if (sp.getBoolean("firstIn", true)) {
+            Intent intent = new Intent(MainActivity.this, WelcomeActivity.class);
+            startActivity(intent);
+        }
 
         setContentView(R.layout.activity_main);
 
         initView();
         initIconData();
 
-        sp = getSharedPreferences("config", MODE_PRIVATE);
-        editor = sp.edit();
-        weatherSP = getSharedPreferences("weatherInfo", MODE_PRIVATE);
-        weatherEditor = weatherSP.edit();
 
         getFragmentManager().beginTransaction().add(R.id.root_layout, new PageAFragment(), "pageA").commit();
+
 
         //如果是第一次使用，则弹出提示，定位，或者让用户选择城市
         if (sp.getString("cityID", null) == null) {
