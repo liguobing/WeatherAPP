@@ -1,13 +1,16 @@
 package cn.lixyz.weatherapp.fragment;
 
+import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,10 +33,13 @@ import cn.lixyz.weatherapp.util.AnimatorUtil;
 public class PageAFragment extends Fragment {
 
     private List<String> iconNames = new ArrayList<String>();
-    public static final int VIEW_VISIBLE = 1;
-    public static final int VIEW_GONE = 0;
     private LinearLayout weather_root;
     private TextView item_message;
+    private ObjectAnimator weatherRootOut;
+    private ObjectAnimator weatherRootIn;
+    private ObjectAnimator item_messageIn;
+    private ObjectAnimator item_messageOut;
+    private boolean animRunning = false;
 
 
     @Override
@@ -53,52 +59,131 @@ public class PageAFragment extends Fragment {
 
         gridview.setAdapter(adapter);
 
+        //item飞入动画
         LayoutAnimationController controller = AnimatorUtil.getGridViewAnimator(windowWidth, widownHeight);
         gridview.setLayoutAnimation(controller);
 
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                ObjectAnimator animator = ObjectAnimator.ofFloat(view, "rotation", 0, 360);
-                animator.setDuration(1000);
-                animator.start();
+            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                if (!animRunning) {
+                    ObjectAnimator animator = ObjectAnimator.ofFloat(view, "rotation", 0, 360);
+                    animator.setDuration(1000);
+                    animator.start();
 
-                SharedPreferences sp = getActivity().getSharedPreferences("weatherInfo", Context.MODE_PRIVATE);
-                String str = sp.getString(iconNames.get(position), "暂未获取到相关信息");
+                    SharedPreferences sp = getActivity().getSharedPreferences("weatherInfo", Context.MODE_PRIVATE);
+                    final String str = sp.getString(iconNames.get(position), "暂未获取到相关信息");
 
-                item_message.setText(str);
-                item_message.setVisibility(View.VISIBLE);
 
-                ObjectAnimator anim1 = ObjectAnimator.ofFloat(weather_root, "translationX", 0, (0 - weather_root.getWidth()));
-                ObjectAnimator anim2 = ObjectAnimator.ofFloat(item_message, "translationX", weather_root.getWidth(), 0);
-                AnimatorSet set = new AnimatorSet();
-                set.setDuration(1000);
-                set.play(anim1).with(anim2);
-                set.start();
+                    weatherRootOut = ObjectAnimator.ofFloat(weather_root, "translationX", 0, (0 - weather_root.getWidth()));    //天气信息划出屏幕
+                    weatherRootIn = ObjectAnimator.ofFloat(weather_root, "translationX", weather_root.getWidth(), 0);//天气信息划入屏幕
+                    item_messageIn = ObjectAnimator.ofFloat(item_message, "translationX", weather_root.getWidth(), 0);//item指数信息划入屏幕
+                    item_messageOut = ObjectAnimator.ofFloat(item_message, "translationX", 0, (0 - weather_root.getWidth()));//item指数信息划出屏幕
+
+                    weatherRootOut.setDuration(500);
+                    weatherRootIn.setDuration(500);
+                    item_messageIn.setDuration(1500);
+                    item_messageOut.setDuration(1500);
+
+                    /**
+                     * 设置点击Item时候，指数信息的进出和天气信息的进出，因为要给指数信息设置内容已经设置是否隐藏，所以没有办法使用AnimatorSet
+                     */
+
+                    weatherRootOut.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            animRunning = true;
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            item_message.setVisibility(View.VISIBLE);
+                            item_message.setText(str);
+                            item_messageIn.start();
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+
+                    item_messageIn.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            item_messageOut.start();
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                    item_messageOut.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            item_message.setVisibility(View.GONE);
+                            weatherRootIn.start();
+
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+
+                    weatherRootIn.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            animRunning = false;
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                    weatherRootOut.start();
+                }
             }
         });
         return view;
-    }
-
-    Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-
-        }
-    };
-
-
-    /**
-     * 设置View组件是否显式
-     *
-     * @param status 是否显式
-     * @param views  要操作的组件
-     */
-    public void setViewVisibility(int status, View... views) {
-        for (int i = 0; i < views.length; i++) {
-            views[i].setVisibility(status);
-        }
     }
 
     private void initList() {
