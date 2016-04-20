@@ -71,7 +71,7 @@ public class PageAFragment extends Fragment {
                     animator.setDuration(1000);
                     animator.start();
 
-                    SharedPreferences sp = getActivity().getSharedPreferences("weatherInfo", Context.MODE_PRIVATE);
+                    SharedPreferences sp = getActivity().getSharedPreferences("config", Context.MODE_PRIVATE);
                     final String str = sp.getString(iconNames.get(position), "暂未获取到相关信息");
 
 

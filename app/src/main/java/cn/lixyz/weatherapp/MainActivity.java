@@ -8,11 +8,13 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -20,6 +22,8 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
+
+import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +33,7 @@ import cn.lixyz.weatherapp.activity.WelcomeActivity;
 import cn.lixyz.weatherapp.bean.HeWeather;
 import cn.lixyz.weatherapp.fragment.PageAFragment;
 import cn.lixyz.weatherapp.fragment.PageBFragment;
+import cn.lixyz.weatherapp.util.DateUtil;
 import cn.lixyz.weatherapp.util.KeyUtil;
 import cn.lixyz.weatherapp.util.SetBarColorUtil;
 
@@ -42,40 +47,34 @@ public class MainActivity extends Activity {
     private float upX = 0;//用来记录手指抬起时X点的坐标，
     private int flag = 1;   //用来标记当前Fragment是第一页还是第二页
 
-    private String cityID = null;
     private boolean inStackTop = true;  //用来存储Activity是否在栈顶，在onPause方法中设置为false，用于跳出循环更新温度和风力
 
-    private SharedPreferences sp;
+    private SharedPreferences configSp;
     private SharedPreferences.Editor editor;
-    private SharedPreferences weatherSP;
-    private SharedPreferences.Editor weatherEditor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         SetBarColorUtil.setBarColor(getWindow());   //调用工具类，设置StatusBar和NavigationBar透明
-        sp = getSharedPreferences("config", MODE_PRIVATE);
-        editor = sp.edit();
-        weatherSP = getSharedPreferences("weatherInfo", MODE_PRIVATE);
-        weatherEditor = weatherSP.edit();
+        setContentView(R.layout.activity_main);
+        getFragmentManager().beginTransaction().add(R.id.root_layout, new PageAFragment(), "pageA").commit();
+        initView();
+        initIconData();
 
-        if (sp.getBoolean("firstIn", true)) {
+        configSp = getSharedPreferences("config", MODE_PRIVATE);
+        editor = configSp.edit();
+
+        //通过configSp判断是否是第一次进入，如果是第一次进入，则进入欢迎界面
+        if (configSp.getBoolean("first", true)) {
             Intent intent = new Intent(MainActivity.this, WelcomeActivity.class);
             startActivity(intent);
         }
 
-        setContentView(R.layout.activity_main);
-
-        initView();
-        initIconData();
-
-
-        getFragmentManager().beginTransaction().add(R.id.root_layout, new PageAFragment(), "pageA").commit();
-
-
-        //如果是第一次使用，则弹出提示，定位，或者让用户选择城市
-        if (sp.getString("cityID", null) == null) {
+        /**
+         * 查看configSp中的city字段是否有值，如果有值，开始查看日期，如果无值，提示用户选择城市
+         */
+        if (configSp.getString("cityName", null) == null) {
             AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
             dialog.setCancelable(false);
             dialog.setTitle("选择城市");
@@ -92,6 +91,7 @@ public class MainActivity extends Activity {
             dialog.show();
         }
 
+
         cityName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -99,6 +99,48 @@ public class MainActivity extends Activity {
                 startActivityForResult(intent, 1);
             }
         });
+
+
+    }
+
+    /**
+     * 获取天气内容,更新configSp内容
+     */
+    private void updateWeather() {
+        String cityID = configSp.getString("cityID", null);
+        if (cityID != null) {
+            String requestURL = "https://api.heweather.com/x3/weather?cityid=" + cityID + "&key=" + KeyUtil.WEATHER_KEY;
+            RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
+            JsonObjectRequest request = new JsonObjectRequest(requestURL, null, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject jsonObject) {
+                    Gson gson = new Gson();
+                    HeWeather heWeather = gson.fromJson(jsonObject.toString().replace("HeWeather data service 3.0", "heWeather"), HeWeather.class);
+                    editor.putString("cityID", heWeather.getHeWeather().get(0).getBasic().getId());//城市ID
+                    editor.putString("cityName", heWeather.getHeWeather().get(0).getBasic().getCity());//城市名称
+                    editor.putString("date", heWeather.getHeWeather().get(0).getDaily_forecast().get(0).getDate());//日期
+                    editor.putString("now_code", heWeather.getHeWeather().get(0).getNow().getCond().getCode());//天气代码
+                    editor.putString("now_fl", heWeather.getHeWeather().get(0).getNow().getFl() + "℃");//体感温度
+                    editor.putString("now_cond", heWeather.getHeWeather().get(0).getNow().getCond().getTxt());//天气描述
+                    editor.putString("now_wind_dir", heWeather.getHeWeather().get(0).getNow().getWind().getDir());//风向
+                    editor.putString("now_wind_sc", heWeather.getHeWeather().get(0).getNow().getWind().getSc() + "级");//风力等级
+                    editor.putString("运动指数", heWeather.getHeWeather().get(0).getSuggestion().getSport().getTxt());
+                    editor.putString("穿衣指数", heWeather.getHeWeather().get(0).getSuggestion().getDrsg().getTxt());
+                    editor.putString("紫外线指数", heWeather.getHeWeather().get(0).getSuggestion().getUv().getTxt());
+                    editor.putString("洗车指数", heWeather.getHeWeather().get(0).getSuggestion().getCw().getTxt());
+                    editor.putString("旅游指数", heWeather.getHeWeather().get(0).getSuggestion().getTrav().getTxt());
+                    editor.putString("感冒指数", heWeather.getHeWeather().get(0).getSuggestion().getFlu().getTxt());
+                    editor.commit();
+                    handler.sendEmptyMessage(1);//发送消息，configSp已经更新完毕
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError volleyError) {
+                    Toast.makeText(MainActivity.this, "抱歉，更新天气失败", Toast.LENGTH_SHORT).show();
+                }
+            });
+            queue.add(request);
+        }
     }
 
     /**
@@ -121,86 +163,53 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        inStackTop = true;
-        String cityID = sp.getString("cityID", null);
-        if (cityID != null) {
-            editView(cityID);
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+        if (configSp.getString("cityID", null) != null && configSp.getString("date", "-").equals(DateUtil.getDate())) {
+            Log.d("TTTT", "~~~~~~~~1~~~~~~~~");
+            editView();
+        } else {
+            Log.d("TTTT", "~~~~~~~~2~~~~~~~~");
+            updateWeather();
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        inStackTop = false;
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    private void editView(final String cityID) {
-        String requestURL = "https://api.heweather.com/x3/weather?cityid=" + cityID + "&key=" + KeyUtil.WEATHER_KEY;
-        RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
-        JsonObjectRequest request = new JsonObjectRequest(requestURL, null, new Response.Listener() {
+    private void editView() {
+        cityName.setText(configSp.getString("cityName", "未知"));//设置城市名称
+        time.setText(configSp.getString("date", "未知"));//设置日期
+        img.setImageResource(iconMap.get(configSp.getString("now_code", "")));
+        new Thread(new Runnable() {
             @Override
-            public void onResponse(Object o) {
-                Gson gson = new Gson();
-                HeWeather heWeather = gson.fromJson(o.toString().replace("HeWeather data service 3.0", "heWeather"), HeWeather.class);
-                //设置城市名和日期
-                cityName.setText(heWeather.getHeWeather().get(0).getBasic().getCity());
-                time.setText(heWeather.getHeWeather().get(0).getDaily_forecast().get(0).getDate());
-                img.setImageDrawable(getResources().getDrawable(iconMap.get(heWeather.getHeWeather().get(0).getNow().getCond().getCode())));
-
-                weatherEditor.putString("运动指数", heWeather.getHeWeather().get(0).getSuggestion().getSport().getTxt());
-                weatherEditor.putString("穿衣指数", heWeather.getHeWeather().get(0).getSuggestion().getDrsg().getTxt());
-                weatherEditor.putString("紫外线指数", heWeather.getHeWeather().get(0).getSuggestion().getUv().getTxt());
-                weatherEditor.putString("洗车指数", heWeather.getHeWeather().get(0).getSuggestion().getCw().getTxt());
-                weatherEditor.putString("旅游指数", heWeather.getHeWeather().get(0).getSuggestion().getTrav().getTxt());
-                weatherEditor.putString("感冒指数", heWeather.getHeWeather().get(0).getSuggestion().getFlu().getTxt());
-                weatherEditor.commit();
-
-                final String now_fl = heWeather.getHeWeather().get(0).getNow().getFl() + "℃";//体感温度
-                final String now_cond = heWeather.getHeWeather().get(0).getNow().getCond().getTxt();//天气描述
-                final String now_wind_dir = heWeather.getHeWeather().get(0).getNow().getWind().getDir();//风向
-                final String now_wind_sc = heWeather.getHeWeather().get(0).getNow().getWind().getSc() + "级";//风力等级
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        FlAndWindDir flAndCond = new FlAndWindDir();
-                        flAndCond.setWindDir(now_wind_dir);
-                        flAndCond.setFl(now_fl);
-                        CondAndWindSc condAndWindSc = new CondAndWindSc();
-                        condAndWindSc.setCond(now_cond);
-                        condAndWindSc.setWindSc(now_wind_sc);
-                        while (inStackTop) {
-                            try {
-                                Message weatherMessage = new Message();
-                                weatherMessage.obj = flAndCond;
-                                handler.sendMessage(weatherMessage);
-                                Thread.sleep(2000);
-                                Message windMessage = new Message();
-                                windMessage.obj = condAndWindSc;
-                                handler.sendMessage(windMessage);
-                                Thread.sleep(2000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
+            public void run() {
+                FlAndWindDir flAndCond = new FlAndWindDir();
+                flAndCond.setWindDir(configSp.getString("now_wind_dir", null));
+                flAndCond.setFl(configSp.getString("now_fl", null));
+                CondAndWindSc condAndWindSc = new CondAndWindSc();
+                condAndWindSc.setCond(configSp.getString("now_cond", null));
+                condAndWindSc.setWindSc(configSp.getString("now_wind_sc", null));
+                while (inStackTop) {
+                    try {
+                        Message weatherMessage = new Message();
+                        weatherMessage.obj = flAndCond;
+                        handler.sendMessage(weatherMessage);
+                        Thread.sleep(2000);
+                        Message windMessage = new Message();
+                        windMessage.obj = condAndWindSc;
+                        handler.sendMessage(windMessage);
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                }).start();
+                }
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError volleyError) {
-
-            }
-        });
-        queue.add(request);
+        }).start();
     }
-
 
     /**
      * Handler用来循环更新温度和风力的TextView
@@ -217,6 +226,9 @@ public class MainActivity extends Activity {
             } else if (object instanceof FlAndWindDir) {
                 weahter.setText(((FlAndWindDir) object).getFl());
                 wind.setText(((FlAndWindDir) object).getWindDir());
+            }
+            if (msg.what == 1) {
+                editView();
             }
         }
     };
