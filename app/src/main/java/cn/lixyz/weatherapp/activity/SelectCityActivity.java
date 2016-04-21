@@ -2,6 +2,7 @@ package cn.lixyz.weatherapp.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -132,10 +133,13 @@ public class SelectCityActivity extends Activity {
                 cursor.moveToFirst();
                 String id = cursor.getString(cursor.getColumnIndex("id"));
                 Intent intent = new Intent();
-                intent.putExtra("city", selectCity);
-                intent.putExtra("id", id);
+                intent.putExtra("cityName", selectCity);
+                intent.putExtra("cityID", id);
                 setResult(RESULT_OK, intent);
-                getSharedPreferences("config", MODE_PRIVATE).edit().putString("cityID", id).commit();
+//                SharedPreferences.Editor editor = getSharedPreferences("config", MODE_PRIVATE).edit();
+//                editor.putString("cityID", id);
+//                editor.putString("cityName", selectCity);
+//                editor.commit();
                 finish();
             }
         });

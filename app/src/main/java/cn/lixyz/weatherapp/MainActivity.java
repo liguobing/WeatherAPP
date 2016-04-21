@@ -40,17 +40,18 @@ import cn.lixyz.weatherapp.util.SetBarColorUtil;
 
 public class MainActivity extends Activity {
 
-    private ImageView page_index, img;
-    private TextView cityName, time, weahter, wind;
+    private ImageView page_index, iv_img;
+    private TextView tv_cityName, tv_date, tv_weahter, tv_wind;
 
     private float downX = 0;//用来记录手指按下时X点的坐标，
     private float upX = 0;//用来记录手指抬起时X点的坐标，
     private int flag = 1;   //用来标记当前Fragment是第一页还是第二页
 
-    private boolean inStackTop = true;  //用来存储Activity是否在栈顶，在onPause方法中设置为false，用于跳出循环更新温度和风力
 
     private SharedPreferences configSp;
     private SharedPreferences.Editor editor;
+
+    private int statusNumber = 0; //用来方式更新天气之后，UI组件更新不及时造成显式混乱
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,15 +93,56 @@ public class MainActivity extends Activity {
         }
 
 
-        cityName.setOnClickListener(new View.OnClickListener() {
+        tv_cityName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, SelectCityActivity.class);
                 startActivityForResult(intent, 1);
             }
         });
+    }
 
+    /**
+     * 接收SelectCityActivity传递过来的城市ID并存储到SP中
+     *
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (data != null) {
+            String cityID = data.getStringExtra("cityID");
+            String cityName = data.getStringExtra("cityName");
+            editor.putString("cityID", cityID);
+            editor.putString("cityName", cityName);
+            editor.commit();
+        }
+    }
 
+    /**
+     * 在onStart方法中更新天气和更新UI
+     */
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (configSp.getString("cityID", null) != null) {
+            if (tv_cityName.getText().toString() == null && tv_date.getText().toString() == null) {
+                updateWeather();
+            } else {
+                if (tv_cityName.getText().toString().equals(configSp.getString("cityName", null)) && tv_date.getText().toString().equals(configSp.getString("date", null))) {
+                    editView();
+                } else {
+                    updateWeather();
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
     /**
@@ -131,7 +173,9 @@ public class MainActivity extends Activity {
                     editor.putString("旅游指数", heWeather.getHeWeather().get(0).getSuggestion().getTrav().getTxt());
                     editor.putString("感冒指数", heWeather.getHeWeather().get(0).getSuggestion().getFlu().getTxt());
                     editor.commit();
-                    handler.sendEmptyMessage(1);//发送消息，configSp已经更新完毕
+                    statusNumber++;
+                    //天气更新完毕，更新UI
+                    editView();
                 }
             }, new Response.ErrorListener() {
                 @Override
@@ -143,47 +187,16 @@ public class MainActivity extends Activity {
         }
     }
 
+
     /**
-     * 接收SelectCityActivity传递过来的城市ID并存储到SP中
-     *
-     * @param requestCode
-     * @param resultCode
-     * @param data
+     * 从SP中获取天气内容，更新UI
+     * 使用statusNumber来控制循环，防止UI更新混乱
      */
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (data != null) {
-            String cityID = data.getStringExtra("id");
-            editor.putString("cityID", cityID);
-            editor.commit();
-        }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-
-        if (configSp.getString("cityID", null) != null && configSp.getString("date", "-").equals(DateUtil.getDate())) {
-            Log.d("TTTT", "~~~~~~~~1~~~~~~~~");
-            editView();
-        } else {
-            Log.d("TTTT", "~~~~~~~~2~~~~~~~~");
-            updateWeather();
-        }
-    }
-
     private void editView() {
-        cityName.setText(configSp.getString("cityName", "未知"));//设置城市名称
-        time.setText(configSp.getString("date", "未知"));//设置日期
-        img.setImageResource(iconMap.get(configSp.getString("now_code", "")));
+        final int tmpStatusNumber = statusNumber;
+        tv_cityName.setText(configSp.getString("cityName", "未知"));//设置城市名称
+        tv_date.setText(configSp.getString("date", "未知"));//设置日期
+        iv_img.setImageResource(iconMap.get(configSp.getString("now_code", "999")));
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -193,19 +206,19 @@ public class MainActivity extends Activity {
                 CondAndWindSc condAndWindSc = new CondAndWindSc();
                 condAndWindSc.setCond(configSp.getString("now_cond", null));
                 condAndWindSc.setWindSc(configSp.getString("now_wind_sc", null));
-                while (inStackTop) {
-                    try {
+                try {
+                    while (tmpStatusNumber == statusNumber) {
                         Message weatherMessage = new Message();
                         weatherMessage.obj = flAndCond;
                         handler.sendMessage(weatherMessage);
-                        Thread.sleep(2000);
+                        Thread.sleep(1000);
                         Message windMessage = new Message();
                         windMessage.obj = condAndWindSc;
                         handler.sendMessage(windMessage);
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        Thread.sleep(1000);
                     }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }).start();
@@ -220,15 +233,11 @@ public class MainActivity extends Activity {
             super.handleMessage(msg);
             Object object = msg.obj;
             if (object instanceof CondAndWindSc) {
-                weahter.setText(((CondAndWindSc) object).getCond());
-                wind.setText(((CondAndWindSc) object).getWindSc());
-
+                tv_weahter.setText(((CondAndWindSc) object).getCond());
+                tv_wind.setText(((CondAndWindSc) object).getWindSc());
             } else if (object instanceof FlAndWindDir) {
-                weahter.setText(((FlAndWindDir) object).getFl());
-                wind.setText(((FlAndWindDir) object).getWindDir());
-            }
-            if (msg.what == 1) {
-                editView();
+                tv_weahter.setText(((FlAndWindDir) object).getFl());
+                tv_wind.setText(((FlAndWindDir) object).getWindDir());
             }
         }
     };
@@ -238,11 +247,11 @@ public class MainActivity extends Activity {
      */
     private void initView() {
         page_index = (ImageView) findViewById(R.id.page_index);
-        cityName = (TextView) findViewById(R.id.cityName);
-        time = (TextView) findViewById(R.id.time);
-        weahter = (TextView) findViewById(R.id.weahter);
-        wind = (TextView) findViewById(R.id.wind);
-        img = (ImageView) findViewById(R.id.img);
+        tv_cityName = (TextView) findViewById(R.id.tv_cityName);
+        tv_date = (TextView) findViewById(R.id.tv_date);
+        tv_weahter = (TextView) findViewById(R.id.tv_weahter);
+        tv_wind = (TextView) findViewById(R.id.tv_wind);
+        iv_img = (ImageView) findViewById(R.id.iv_img);
     }
 
 

@@ -7,7 +7,7 @@
 
     <!-- 城市 -->
     <TextView
-        android:id="@+id/cityName"
+        android:id="@+id/tv_cityName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -16,7 +16,7 @@
         android:textSize="30dp" />
     <!-- 当前日期 -->
     <TextView
-        android:id="@+id/time"
+        android:id="@+id/tv_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -31,14 +31,14 @@
         android:orientation="vertical">
         <!-- 天气图标 -->
         <ImageView
-            android:id="@+id/img"
+            android:id="@+id/iv_img"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_weight="1" />
         <!-- 天气和温度 -->
         <TextView
-            android:id="@+id/weahter"
+            android:id="@+id/tv_weahter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -47,7 +47,7 @@
 
         <!-- 风力和风向 -->
         <TextView
-            android:id="@+id/wind"
+            android:id="@+id/tv_wind"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
