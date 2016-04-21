@@ -6,12 +6,14 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,6 +37,7 @@ public class SelectCityActivity extends Activity {
     private Button select_city_commit;
     private GridView hot_city;
     private List<String> hotCityList = new ArrayList<String>();
+    private Intent intent = new Intent();
 
 
     @Override
@@ -126,13 +129,13 @@ public class SelectCityActivity extends Activity {
             }
         });
 
+
         select_city_commit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Cursor cursor = database.query(true, "city", new String[]{"id"}, "region=? and city=?", new String[]{selectRegion, selectCity}, null, null, "_id asc", null);
                 cursor.moveToFirst();
                 String id = cursor.getString(cursor.getColumnIndex("id"));
-                Intent intent = new Intent();
                 intent.putExtra("cityName", selectCity);
                 intent.putExtra("cityID", id);
                 setResult(RESULT_OK, intent);
@@ -142,11 +145,44 @@ public class SelectCityActivity extends Activity {
 
         AdapterForHotCityGridView adapter = new AdapterForHotCityGridView(this, hotCityList);
         hot_city.setAdapter(adapter);
-
         hot_city.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
+                switch (position) {
+                    case 0:
+                        Toast.makeText(SelectCityActivity.this,"定位中。。。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case 1:
+                        intent.putExtra("cityName", "北京");
+                        intent.putExtra("cityID", "CN101010100");
+                        setResult(RESULT_OK, intent);
+                        finish();
+                        break;
+                    case 2:
+                        intent.putExtra("cityName", "上海");
+                        intent.putExtra("cityID", "CN101020100");
+                        setResult(RESULT_OK, intent);
+                        finish();
+                        break;
+                    case 3:
+                        intent.putExtra("cityName", "广州");
+                        intent.putExtra("cityID", "CN101280101");
+                        setResult(RESULT_OK, intent);
+                        finish();
+                        break;
+                    case 4:
+                        intent.putExtra("cityName", "深圳");
+                        intent.putExtra("cityID", "CN101280601");
+                        setResult(RESULT_OK, intent);
+                        finish();
+                        break;
+                    case 5:
+                        intent.putExtra("cityName", "天津");
+                        intent.putExtra("cityID", "CN101030100");
+                        setResult(RESULT_OK, intent);
+                        finish();
+                        break;
+                }
             }
         });
 

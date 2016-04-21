@@ -8,8 +8,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
-import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -33,7 +31,6 @@ import cn.lixyz.weatherapp.activity.WelcomeActivity;
 import cn.lixyz.weatherapp.bean.HeWeather;
 import cn.lixyz.weatherapp.fragment.PageAFragment;
 import cn.lixyz.weatherapp.fragment.PageBFragment;
-import cn.lixyz.weatherapp.util.DateUtil;
 import cn.lixyz.weatherapp.util.KeyUtil;
 import cn.lixyz.weatherapp.util.SetBarColorUtil;
 
@@ -201,11 +198,11 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 FlAndWindDir flAndCond = new FlAndWindDir();
-                flAndCond.setWindDir(configSp.getString("now_wind_dir", null));
-                flAndCond.setFl(configSp.getString("now_fl", null));
+                flAndCond.setWindDir(configSp.getString("now_wind_dir", "-"));
+                flAndCond.setFl(configSp.getString("now_fl", "-"));
                 CondAndWindSc condAndWindSc = new CondAndWindSc();
-                condAndWindSc.setCond(configSp.getString("now_cond", null));
-                condAndWindSc.setWindSc(configSp.getString("now_wind_sc", null));
+                condAndWindSc.setCond(configSp.getString("now_cond", "-"));
+                condAndWindSc.setWindSc(configSp.getString("now_wind_sc", "-"));
                 try {
                     while (tmpStatusNumber == statusNumber) {
                         Message weatherMessage = new Message();
