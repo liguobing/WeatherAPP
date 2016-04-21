@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -34,6 +35,19 @@ public class WelcomeActivity extends Activity {
         initViews();
     }
 
+    /**
+     * 禁用返回键
+     * @param keyCode
+     * @param event
+     * @return
+     */
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
     public void initViews() {
 
         LayoutInflater inflate = LayoutInflater.from(this);
@@ -52,7 +66,7 @@ public class WelcomeActivity extends Activity {
             public void onClick(View v) {
                 Intent intent = new Intent(WelcomeActivity.this, MainActivity.class);
                 startActivity(intent);
-                getSharedPreferences("config", MODE_PRIVATE).edit().putBoolean("firstIn", false).commit();
+                getSharedPreferences("config", MODE_PRIVATE).edit().putBoolean("first", false).commit();
                 finish();
             }
         });

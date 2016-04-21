@@ -136,10 +136,6 @@ public class SelectCityActivity extends Activity {
                 intent.putExtra("cityName", selectCity);
                 intent.putExtra("cityID", id);
                 setResult(RESULT_OK, intent);
-//                SharedPreferences.Editor editor = getSharedPreferences("config", MODE_PRIVATE).edit();
-//                editor.putString("cityID", id);
-//                editor.putString("cityName", selectCity);
-//                editor.commit();
                 finish();
             }
         });
@@ -157,11 +153,11 @@ public class SelectCityActivity extends Activity {
     }
 
     private void initHotCityList() {
+        hotCityList.add("定位..");
         hotCityList.add("北京");
         hotCityList.add("上海");
         hotCityList.add("广州");
         hotCityList.add("深圳");
-        hotCityList.add("南京");
         hotCityList.add("天津");
     }
 
