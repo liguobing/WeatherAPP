@@ -9,6 +9,7 @@
  - 主要运用了Fragment、Gson、Volley、GridView、属性动画方面的知识
 
  以下内容未完成
+ - Android 6.0 动态申请权限
  - 自动定位
  - ~~热门城市~~
  - 旅游景点
